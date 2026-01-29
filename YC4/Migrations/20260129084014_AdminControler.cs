@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace YC4.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateUserIdToInt : Migration
+    public partial class AdminControler : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -79,7 +79,9 @@ namespace YC4.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Username = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -224,11 +226,11 @@ namespace YC4.Migrations
 
             migrationBuilder.InsertData(
                 table: "Users",
-                columns: new[] { "Id", "FullName", "Password", "Username" },
+                columns: new[] { "Id", "Email", "FullName", "Password", "PhoneNumber", "Username" },
                 values: new object[,]
                 {
-                    { 1, "Sếp Tổng", "123", "admin" },
-                    { 2, "Khách hàng", "123", "Customer" }
+                    { 1, null, "Sếp Tổng", "123", null, "admin" },
+                    { 2, null, "Khách hàng", "123", null, "Customer" }
                 });
 
             migrationBuilder.InsertData(

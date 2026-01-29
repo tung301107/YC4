@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using YC4.Interfaces;
-using YC4.Entity;
-using YC4.DTOs;
 using YC4.Data;
+using YC4.DTOs;
+using YC4.Entity;
+using YC4.Interfaces;
 
 namespace YC4.Services
 {
@@ -15,84 +15,139 @@ namespace YC4.Services
             _context = context;
         }
 
+        // 1. Lấy danh sách sự kiện (Dùng cho trang chủ/quản lý)
+        public async Task<IEnumerable<object>> GetAllEventsAsync()
+        {
+            return await _context.Events
+                .Select(e => new
+                {
+                    e.Id,
+                    e.Name,
+                    e.DateTime,
+                    e.Description,
+                    TotalSeats = e.TotalSeats,
+                    AvailableSeats = e.Seats.Count(s => s.IsAvailable)
+                })
+                .ToListAsync();
+        }
+
+        // 2. Lấy ghế trống (Dùng cho trang chọn chỗ)
+        public async Task<IEnumerable<object>> GetAvailableSeatsAsync(Guid eventId)
+        {
+            return await _context.Seats
+                .Where(s => s.EventId == eventId && s.IsAvailable)
+                .OrderBy(s => s.RowName)
+                .ThenBy(s => s.SeatNumber)
+                .Select(s => new
+                {
+                    s.SeatId,
+                    s.RowName,
+                    s.SeatNumber,
+                    s.Price
+                })
+                .ToListAsync();
+        }
+
+        // 3. Tạo sự kiện và tự động sinh ghế
         public async Task<Guid> CreateEventAsync(CreateEventDto dto)
         {
+            var eventId = Guid.NewGuid();
             var newEvent = new Event
             {
-                Id = Guid.NewGuid(),
+                Id = eventId,
                 Name = dto.Name,
                 DateTime = dto.DateTime,
                 Description = dto.Description,
-                TotalSeats = dto.Rows.Count * dto.SeatsPerRow
+                TotalSeats = dto.Rows.Count * dto.SeatsPerRow,
+                Seats = new List<Seat>()
             };
 
-            // Tự động tạo danh sách ghế dựa trên số hàng và số ghế mỗi hàng
-            foreach (var rowName in dto.Rows)
+            // Logic sinh ghế tự động: VD Rows=["A","B"], SeatsPerRow=10 => Sinh A1-A10, B1-B10
+            foreach (var row in dto.Rows)
             {
                 for (int i = 1; i <= dto.SeatsPerRow; i++)
                 {
                     newEvent.Seats.Add(new Seat
                     {
                         SeatId = Guid.NewGuid(),
-                        RowName = rowName,
+                        RowName = row,
                         SeatNumber = i,
                         IsAvailable = true,
-                        Price = dto.Price, // <-- Gán giá vé cho từng ghế
-                        EventId = newEvent.Id
+                        Price = dto.Price,
+                        EventId = eventId
                     });
                 }
             }
 
             _context.Events.Add(newEvent);
             await _context.SaveChangesAsync();
-            return newEvent.Id;
+            return eventId;
         }
 
-        public async Task<List<Event>> GetAllEventsAsync()
-        {
-            return await _context.Events
-                .Include(e => e.Seats)
-                .ToListAsync();
-        }
-
+        // 4. Cập nhật sự kiện (Có check ràng buộc đặt vé)
         public async Task<bool> UpdateEventAsync(Guid id, CreateEventDto dto)
         {
-            var existingEvent = await _context.Events.Include(e => e.Seats).FirstOrDefaultAsync(x => x.Id == id);
+            var existingEvent = await _context.Events
+                .Include(e => e.Seats)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
             if (existingEvent == null) return false;
 
-            // 1. Cập nhật thông tin Event
-            existingEvent.Name = dto.Name;
-            existingEvent.DateTime = dto.DateTime;
-            existingEvent.Description = dto.Description;
-            existingEvent.TotalSeats = dto.Rows.Count * dto.SeatsPerRow;
+            // KIỂM TRA: Nếu đã có người đặt vé cho bất kỳ ghế nào thuộc Event này thì KHÔNG cho đổi cấu hình ghế
+            var isAnySeatBooked = await _context.Seats.AnyAsync(s => s.EventId == id && !s.IsAvailable);
 
-            // 2. Xóa ghế cũ và lưu ngay để dọn Tracking
-            if (existingEvent.Seats.Any())
+            if (isAnySeatBooked)
             {
-                _context.Seats.RemoveRange(existingEvent.Seats);
-                await _context.SaveChangesAsync(); // Dọn dẹp database và bộ nhớ tracking
-                existingEvent.Seats = new List<Seat>(); // Làm mới list trong memory
+                // Nếu đã có người đặt, chỉ cho phép đổi thông tin text, không cho đổi Rows/SeatsPerRow/Price
+                existingEvent.Name = dto.Name;
+                existingEvent.DateTime = dto.DateTime;
+                existingEvent.Description = dto.Description;
             }
-
-            // 3. Thêm ghế mới
-            foreach (var rowName in dto.Rows)
+            else
             {
-                for (int i = 1; i <= dto.SeatsPerRow; i++)
+                // Nếu chưa có ai đặt, cho phép làm mới toàn bộ cấu hình ghế
+                existingEvent.Name = dto.Name;
+                existingEvent.DateTime = dto.DateTime;
+                existingEvent.Description = dto.Description;
+                existingEvent.TotalSeats = dto.Rows.Count * dto.SeatsPerRow;
+
+                // Xóa ghế cũ
+                _context.Seats.RemoveRange(existingEvent.Seats);
+
+                // Tạo lại ghế mới
+                foreach (var row in dto.Rows)
                 {
-                    existingEvent.Seats.Add(new Seat
+                    for (int i = 1; i <= dto.SeatsPerRow; i++)
                     {
-                        SeatId = Guid.NewGuid(), // Bạn tự tạo ID nên cần DatabaseGeneratedOption.None
-                        RowName = rowName,
-                        SeatNumber = i,
-                        IsAvailable = true,
-                        Price = dto.Price,
-                        EventId = existingEvent.Id
-                    });
+                        _context.Seats.Add(new Seat
+                        {
+                            SeatId = Guid.NewGuid(),
+                            RowName = row,
+                            SeatNumber = i,
+                            IsAvailable = true,
+                            Price = dto.Price,
+                            EventId = id
+                        });
+                    }
                 }
             }
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        // 5. Xóa sự kiện
+        public async Task<bool> DeleteEventAsync(Guid id)
+        {
+            var ev = await _context.Events.Include(e => e.Seats).FirstOrDefaultAsync(e => e.Id == id);
+            if (ev == null) return false;
+
+            // KIỂM TRA: Nếu có ghế nào đã được bán (IsAvailable = false), không cho xóa
+            if (ev.Seats.Any(s => !s.IsAvailable))
+                throw new Exception("Không thể xóa sự kiện đã có người mua vé!");
+
+            _context.Events.Remove(ev);
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

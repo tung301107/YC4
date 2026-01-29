@@ -84,7 +84,8 @@ namespace YC4.Data
                 new Function { Id = 3, FunctionCode = "Customer_MANAGEMENT", Name = "Quản lý Khách hàng" },
                 new Function { Id = 4, FunctionCode = "CONCERT_UPDATE", Name = "Cập nhật sự kiên" },
                 new Function { Id = 5, FunctionCode = "Available_Seat", Name = "Xem số ghế", Description = "Xem số ghế chưa được đặt của 1 sự kiên" },
-                new Function { Id = 6, FunctionCode = "BOOK", Name = "Đặt vé" }
+                new Function { Id = 6, FunctionCode = "BOOK", Name = "Đặt vé" },
+                new Function { Id = 7, FunctionCode = "ADMIN_MANAGE_USERS", Name = "Admin" }
 
 
             );
@@ -105,8 +106,8 @@ namespace YC4.Data
                 new RoleFunction { RoleId = 1, FunctionId = 5 },
                 new RoleFunction { RoleId = 2, FunctionId = 5 },
                 new RoleFunction { RoleId = 1, FunctionId = 6 },
-                new RoleFunction { RoleId = 2, FunctionId = 6 } 
-
+                new RoleFunction { RoleId = 2, FunctionId = 6 },
+                new RoleFunction { RoleId = 1, FunctionId = 7 }
             );
 
             // 4. Tạo User

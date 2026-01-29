@@ -12,8 +12,8 @@ using YC4.Data;
 namespace YC4.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260129075149_UpdateUserIdToInt")]
-    partial class UpdateUserIdToInt
+    [Migration("20260129084014_AdminControler")]
+    partial class AdminControler
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -288,12 +288,18 @@ namespace YC4.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Password")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Username")

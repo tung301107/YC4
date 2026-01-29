@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using YC4.Attributes;
+using Microsoft.AspNetCore.Authorization;
 using YC4.DTOs;
 using YC4.Interfaces;
 
@@ -7,7 +7,8 @@ namespace YC4.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [HasPermission("ADMIN_MANAGE_USERS")]
+    // Bảo vệ toàn bộ các endpoint bằng quyền ADMIN
+    [Authorize(Policy = "CanManageUsers")]
     public class AdminController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -27,6 +28,7 @@ namespace YC4.Controllers
         [HttpGet("permissions")]
         public async Task<IActionResult> GetPermissions() => Ok(await _userService.GetAllFunctionsAsync());
 
+        // Các phương thức gán quyền cũng được bảo vệ bởi Policy "CanManageUsers"
         [HttpPost("users/{id}/assign-permission")]
         public async Task<IActionResult> AssignToUser(int id, [FromBody] PermissionAssignmentDto req)
             => await _userService.AssignPermissionToUserAsync(id, req.PermissionId, req.PermissionCode) ? Ok("Thành công") : BadRequest();

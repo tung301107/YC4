@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using YC4.DTOs;
 
-namespace YC4.Interfaces;
-
-public interface IOrderService
+namespace YC4.Interfaces
 {
-    Task<Guid> PlaceOrderAsync(int userId, Guid eventId, List<Guid> seatIds);
+    public interface IOrderService
+    {
+        // Trả về object chứa thông tin chi tiết sau khi đặt để Controller phản hồi
+        Task<object> BookTicketsAsync(int userId, BookingRequest request);
+    }
 }

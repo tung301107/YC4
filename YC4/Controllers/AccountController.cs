@@ -35,8 +35,6 @@ namespace YC4.Controllers
 
         // Với JWT, Logout thường xử lý ở Client (Xóa Token), 
         // ở Server chỉ cần trả về OK hoặc xóa Cookie nếu dùng HttpOnly Cookie.
-        [HttpPost("logout")]
-        public IActionResult Logout() => Ok(new { Message = "Đã đăng xuất (Hãy xóa token ở phía Client)" });
 
         [Authorize]
         [HttpGet("profile")]

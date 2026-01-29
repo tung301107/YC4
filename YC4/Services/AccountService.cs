@@ -68,6 +68,8 @@ namespace YC4.Services
                 Username = request.Username,
                 Password = request.Password,
                 FullName = request.FullName,
+                Email = request.Email,
+                PhoneNumber = request.PhoneNumber,
                 UserRoles = new List<UserRole> { new UserRole { RoleId = 2 } }
             };
             _context.Users.Add(newUser);

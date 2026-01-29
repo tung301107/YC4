@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace YC4.Migrations
 {
     /// <inheritdoc />
-    public partial class AdminControler : Migration
+    public partial class a : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -207,12 +207,13 @@ namespace YC4.Migrations
                 columns: new[] { "Id", "Description", "FunctionCode", "Name" },
                 values: new object[,]
                 {
-                    { 1, null, "CONCERT_VIEW", "Xem Concert" },
+                    { 1, null, "CONCERT_view", "Xem Concert" },
                     { 2, null, "CONCERT_CREATE", "Thêm Concert" },
                     { 3, null, "Customer_MANAGEMENT", "Quản lý Khách hàng" },
-                    { 4, null, "CONCERT_UPDATE", "Cập nhật sự kiên" },
-                    { 5, "Xem số ghế chưa được đặt của 1 sự kiên", "Available_Seat", "Xem số ghế" },
-                    { 6, null, "BOOK", "Đặt vé" }
+                    { 4, null, "CONCERT_UPDATE", "Cập nhật sự kiện" },
+                    { 5, null, "Available_Seat", "Xem số ghế" },
+                    { 6, null, "BOOK", "Đặt vé" },
+                    { 7, null, "ADMIN_MANAGE_USERS", "Quản trị hệ thống" }
                 });
 
             migrationBuilder.InsertData(
@@ -221,7 +222,7 @@ namespace YC4.Migrations
                 values: new object[,]
                 {
                     { 1, "Quản trị viên", "ADMIN" },
-                    { 2, "Khách hàng", "Customer" }
+                    { 2, "Khách hàng", "CUSTOMER" }
                 });
 
             migrationBuilder.InsertData(
@@ -230,7 +231,7 @@ namespace YC4.Migrations
                 values: new object[,]
                 {
                     { 1, null, "Sếp Tổng", "123", null, "admin" },
-                    { 2, null, "Khách hàng", "123", null, "Customer" }
+                    { 2, null, "Nguyễn Văn A", "123", null, "customer" }
                 });
 
             migrationBuilder.InsertData(
@@ -244,6 +245,7 @@ namespace YC4.Migrations
                     { 4, 1 },
                     { 5, 1 },
                     { 6, 1 },
+                    { 7, 1 },
                     { 1, 2 },
                     { 5, 2 },
                     { 6, 2 }

@@ -12,8 +12,8 @@ using YC4.Data;
 namespace YC4.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260129084014_AdminControler")]
-    partial class AdminControler
+    [Migration("20260129095458_a")]
+    partial class a
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -77,7 +77,7 @@ namespace YC4.Migrations
                         new
                         {
                             Id = 1,
-                            FunctionCode = "CONCERT_VIEW",
+                            FunctionCode = "CONCERT_view",
                             Name = "Xem Concert"
                         },
                         new
@@ -96,12 +96,11 @@ namespace YC4.Migrations
                         {
                             Id = 4,
                             FunctionCode = "CONCERT_UPDATE",
-                            Name = "Cập nhật sự kiên"
+                            Name = "Cập nhật sự kiện"
                         },
                         new
                         {
                             Id = 5,
-                            Description = "Xem số ghế chưa được đặt của 1 sự kiên",
                             FunctionCode = "Available_Seat",
                             Name = "Xem số ghế"
                         },
@@ -110,6 +109,12 @@ namespace YC4.Migrations
                             Id = 6,
                             FunctionCode = "BOOK",
                             Name = "Đặt vé"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            FunctionCode = "ADMIN_MANAGE_USERS",
+                            Name = "Quản trị hệ thống"
                         });
                 });
 
@@ -164,7 +169,7 @@ namespace YC4.Migrations
                         {
                             Id = 2,
                             Name = "Khách hàng",
-                            RoleCode = "Customer"
+                            RoleCode = "CUSTOMER"
                         });
                 });
 
@@ -200,11 +205,6 @@ namespace YC4.Migrations
                         },
                         new
                         {
-                            RoleId = 2,
-                            FunctionId = 1
-                        },
-                        new
-                        {
                             RoleId = 1,
                             FunctionId = 4
                         },
@@ -215,13 +215,23 @@ namespace YC4.Migrations
                         },
                         new
                         {
-                            RoleId = 2,
-                            FunctionId = 5
+                            RoleId = 1,
+                            FunctionId = 6
                         },
                         new
                         {
                             RoleId = 1,
-                            FunctionId = 6
+                            FunctionId = 7
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            FunctionId = 1
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            FunctionId = 5
                         },
                         new
                         {
@@ -321,9 +331,9 @@ namespace YC4.Migrations
                         new
                         {
                             Id = 2,
-                            FullName = "Khách hàng",
+                            FullName = "Nguyễn Văn A",
                             Password = "123",
-                            Username = "Customer"
+                            Username = "customer"
                         });
                 });
 

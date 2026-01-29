@@ -105,8 +105,7 @@ namespace YC4.Data
                 new RoleFunction { RoleId = 1, FunctionId = 5 },
                 new RoleFunction { RoleId = 2, FunctionId = 5 },
                 new RoleFunction { RoleId = 1, FunctionId = 6 },
-                new RoleFunction { RoleId = 2, FunctionId = 6 }
-
+                new RoleFunction { RoleId = 2, FunctionId = 6 } 
 
             );
 

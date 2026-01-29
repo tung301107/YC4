@@ -1,0 +1,6 @@
+@YC4_HostAddress = http://localhost:5167
+
+GET {{YC4_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

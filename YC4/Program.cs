@@ -23,6 +23,10 @@ builder.Services.AddScoped<IRoleInterface, RoleService>();
 builder.Services.AddScoped<IFunctionInterface, FunctionService>();
 builder.Services.AddScoped<IAuthInterface, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IPriceCalculator, PriceCalculator>();
 
 // --- Authentication ---
 builder.Services.AddAuthentication(options =>

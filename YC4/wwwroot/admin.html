@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Hệ thống - RBAC Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --dark: #0f172a;
+            --panel: #1e293b;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0b0f1a;
+            color: #e2e8f0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 260px;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 3rem;
+            color: var(--primary);
+        }
+
+        nav a {
+            display: block;
+            padding: 0.8rem 1rem;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        nav a:hover,
+        nav a.active {
+            background: rgba(99, 102, 241, 0.1);
+            color: white;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 3rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            color: #94a3b8;
+            font-weight: 400;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-admin {
+            background: rgba(248, 113, 113, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.2);
+        }
+
+        .badge-user {
+            background: rgba(52, 211, 153, 0.1);
+            color: #34d093;
+            border: 1px solid rgba(52, 211, 153, 0.2);
+        }
+
+        .btn-action {
+            background: none;
+            border: 1px solid var(--border);
+            color: #94a3b8;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+        }
+
+        .btn-action:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .logout {
+            margin-top: auto;
+            color: #f87171;
+            cursor: pointer;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <aside>
+        <div class="logo">RC-Admin</div>
+        <nav>
+            <a href="#" class="active">Người dùng</a>
+            <a href="concerts.html">Sự kiện</a>
+            <a href="#">Báo cáo</a>
+        </nav>
+        <div class="logout" onclick="logout()">
+            <span>Đăng xuất</span>
+        </div>
+    </aside>
+
+    <main>
+        <header>
+            <h1>Quản lý Người dùng</h1>
+            <div class="user-info">
+                <span id="admin-name">Admin Name</span>
+                <div class="avatar" id="admin-initial">A</div>
+            </div>
+        </header>
+
+        <div class="card">
+            <h2>Danh sách tài khoản hệ thống</h2>
+            <table id="user-table">
+                <thead>
+                    <tr>
+                        <th>Tài khoản</th>
+                        <th>Họ tên</th>
+                        <th>Vai trò</th>
+                        <th>Quyền đặc biệt</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dữ liệu sẽ được load qua JS -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userData = JSON.parse(localStorage.getItem('user'));
+            const token = localStorage.getItem('token');
+
+            if (!token || !userData.roles.includes('Admin')) {
+                alert('Bạn không có quyền truy cập trang này!');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('admin-name').innerText = userData.fullName;
+            document.getElementById('admin-initial').innerText = userData.fullName[0].toUpperCase();
+
+            loadUsers();
+        });
+
+        async function loadUsers() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/Admin/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const users = await response.json();
+                const tbody = document.querySelector('#user-table tbody');
+                tbody.innerHTML = users.map(u => `
+                    <tr>
+                        <td>${u.username}</td>
+                        <td>${u.fullName}</td>
+                        <td><span class="badge ${u.username === 'admin' ? 'badge-admin' : 'badge-user'}">${u.username === 'admin' ? 'Admin' : 'User'}</span></td>
+                        <td>${u.userFunctions && u.userFunctions.length > 0 ? 'Đã gán' : 'Mặc định'}</td>
+                        <td>
+                            <button class="btn-action" onclick="alert('Tính năng đang phát triển')">Phân quyền</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+
+</html>

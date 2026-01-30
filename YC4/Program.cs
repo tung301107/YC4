@@ -52,12 +52,24 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+    
+    // User Management
     options.AddPolicy("CanViewUsers", policy => policy.RequireClaim("Permission", "USER_VIEW"));
     options.AddPolicy("CanCreateUsers", policy => policy.RequireClaim("Permission", "USER_CREATE"));
     options.AddPolicy("CanEditUsers", policy => policy.RequireClaim("Permission", "USER_EDIT"));
     options.AddPolicy("CanDeleteUsers", policy => policy.RequireClaim("Permission", "USER_DELETE"));
-    options.AddPolicy("CanManageRoles", policy => policy.RequireClaim("Permission", "ROLE_CREATE", "ROLE_EDIT", "ROLE_DELETE"));
-    options.AddPolicy("CanBook", policy => policy.RequireClaim("Permission", "BOOK"));
+    
+    // Role Management
+    options.AddPolicy("CanManageRoles", policy => policy.RequireClaim("Permission", "ROLE_VIEW", "ROLE_CREATE", "ROLE_EDIT", "ROLE_DELETE"));
+    
+    // Concert Management
+    options.AddPolicy("CanViewConcert", policy => policy.RequireClaim("Permission", "CONCERT_VIEW"));
+    options.AddPolicy("CanCreateConcert", policy => policy.RequireClaim("Permission", "CONCERT_CREATE"));
+    options.AddPolicy("CanUpdateConcert", policy => policy.RequireClaim("Permission", "CONCERT_UPDATE"));
+    
+    // Booking & Seats
+    options.AddPolicy("CanBookTicket", policy => policy.RequireClaim("Permission", "BOOK"));
+    options.AddPolicy("CanViewSeats", policy => policy.RequireClaim("Permission", "SEAT_VIEW"));
 });
 
 builder.Services.AddControllers();
@@ -85,6 +97,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.UseCors("AllowLocalDev");
 app.UseHttpsRedirection();

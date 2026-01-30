@@ -42,7 +42,7 @@ namespace YC4.Controllers
         }
 
         // 3. Xem danh sách ghế trống của một sự kiện
-        [Authorize(Policy = "CanViewAvailableSeats")]
+        [Authorize(Policy = "CanViewSeats")]
         [HttpGet("events/{eventId}/available-seats")]
         public async Task<IActionResult> GetAvailableSeats(Guid eventId)
         {

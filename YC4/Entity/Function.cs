@@ -2,13 +2,11 @@
 {
     public class Function
     {
-        public int Id { get; set; }
+        public int FunctionId { get; set; }
         public string FunctionCode { get; set; } = null!;
-        public string Name { get; set; } = null!;
-        public string? Description { get; set; }
+        public string FunctionName { get; set; } = null!;
 
-        // Liên kết
-        public virtual ICollection<RoleFunction> RoleFunctions { get; set; }
-        public virtual ICollection<UserFunction> UserFunctions { get; set; }
+        public virtual ICollection<User_Function> UserFunctions { get; set; } = new List<User_Function>();
+        public virtual ICollection<Role_Function> RoleFunctions { get; set; } = new List<Role_Function>();
     }
 }

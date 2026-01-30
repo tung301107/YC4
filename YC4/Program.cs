@@ -1,32 +1,30 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using System.Text;
 using YC4.Data;
-using YC4.Entity;
 using YC4.Interfaces;
 using YC4.Services;
+using YC4.Entity;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. Cấu hình Strongly Typed Settings (JwtSettings) ---
-// Đọc cấu hình từ appsettings.json và đăng ký vào DI Container
-var jwtSection = builder.Configuration.GetSection("JwtSettings");
-builder.Services.Configure<JwtSettings>(jwtSection);
+// --- JWT Settings ---
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+builder.Services.Configure<JwtSettings>(jwtSettings);
 
-var jwtSettings = jwtSection.Get<JwtSettings>();
-if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.SecretKey))
-{
-    throw new Exception("JwtSettings is not configured properly in appsettings.json");
-}
-var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
-
-// --- 2. Cấu hình DbContext ---
+// --- DB Context ---
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --- 3. Cấu hình Authentication với JWT ---
+// --- Services DI ---
+builder.Services.AddScoped<IUserInterface, UserService>();
+builder.Services.AddScoped<IRoleInterface, RoleService>();
+builder.Services.AddScoped<IFunctionInterface, FunctionService>();
+builder.Services.AddScoped<IAuthInterface, AuthService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+
+// --- Authentication ---
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -34,104 +32,64 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false; // Set true trong môi trường Production
-    options.SaveToken = true;
+    var secretKey = jwtSettings["SecretKey"];
+    var key = Encoding.UTF8.GetBytes(secretKey!);
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = true,
-        ValidIssuer = jwtSettings.Issuer,
+        ValidIssuer = jwtSettings["Issuer"],
         ValidateAudience = true,
-        ValidAudience = jwtSettings.Audience,
+        ValidAudience = jwtSettings["Audience"],
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero // Token hết hạn là vô hiệu lực ngay lập tức
+        ClockSkew = TimeSpan.Zero
     };
 });
 
-// --- 4. Cấu hình Authorization (Phân quyền) ---
+// --- Authorization ---
 builder.Services.AddAuthorization(options =>
 {
-    // Cấu hình Policy dựa trên Role
-    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
-
-    // Cấu hình Policy dựa trên Permission (FunctionCode)
-    options.AddPolicy("CanViewConcert", policy => policy.RequireClaim("Permission", "CONCERT_view"));
-    options.AddPolicy("CanCreateConcert", policy => policy.RequireClaim("Permission", "CONCERT_CREATE"));
-    options.AddPolicy("CanUpdateConcert", policy => policy.RequireClaim("Permission", "CONCERT_UPDATE"));
-    options.AddPolicy("CanViewAvailableSeats", policy => policy.RequireClaim("Permission", "Available_Seat"));
-    options.AddPolicy("CanBookTicket", policy => policy.RequireClaim("Permission", "BOOK"));
-    options.AddPolicy("CanManageUsers", policy => policy.RequireClaim("Permission", "ADMIN_MANAGE_USERS"));
-    options.AddPolicy("CanManageCustomers", policy => policy.RequireClaim("Permission", "Customer_MANAGEMENT"));
+    options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("CanViewUsers", policy => policy.RequireClaim("Permission", "USER_VIEW"));
+    options.AddPolicy("CanCreateUsers", policy => policy.RequireClaim("Permission", "USER_CREATE"));
+    options.AddPolicy("CanEditUsers", policy => policy.RequireClaim("Permission", "USER_EDIT"));
+    options.AddPolicy("CanDeleteUsers", policy => policy.RequireClaim("Permission", "USER_DELETE"));
+    options.AddPolicy("CanManageRoles", policy => policy.RequireClaim("Permission", "ROLE_CREATE", "ROLE_EDIT", "ROLE_DELETE"));
+    options.AddPolicy("CanBook", policy => policy.RequireClaim("Permission", "BOOK"));
 });
 
-// --- 5. Đăng ký DI Services & Swagger ---
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddHttpContextAccessor();
-
-// Cấu hình Swagger để hỗ trợ kiểm thử Token trực tiếp
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "YC4 Ticketing API", Version = "v1" });
-
-    // Cấu hình nút Authorize (Chiếc khóa) trên giao diện Swagger
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "Vui lòng nhập Token theo định dạng: Bearer {your_token}",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
-
-// Đăng ký các Interface và Service thực thi
-builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddScoped<IAccountService, AccountService>();
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddTransient<IPriceCalculator, PriceCalculator>();
-
-// Cấu hình CORS
+builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    options.AddPolicy("AllowLocalDev", policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
 var app = builder.Build();
 
-// --- 6. Cấu hình Middleware Pipeline ---
+// --- Seed Data ---
+try
+{
+    await SeedData.InitializeAsync(app.Services);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error during database initialization: {ex.Message}");
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "YC4 API v1"));
+    app.UseSwaggerUI();
 }
 
+app.UseCors("AllowLocalDev");
 app.UseHttpsRedirection();
-
-// QUAN TRỌNG: CORS phải đứng trước Authentication
-app.UseCors("AllowAll");
-
-// Thứ tự bắt buộc: Xác thực trước -> Phân quyền sau
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
-Console.WriteLine("=== YC4 TICKETING SYSTEM IS RUNNING ===");
-Console.WriteLine($"Environment: {app.Environment.EnvironmentName}");
 app.Run();

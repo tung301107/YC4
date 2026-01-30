@@ -1,16 +1,16 @@
-﻿// File: YC4.Entity/User.cs
-namespace YC4.Entity
+﻿namespace YC4.Entity
 {
     public class User
     {
-        public int Id { get; set; }
+        public int UserId { get; set; }
         public string Username { get; set; } = null!;
-        public string Password { get; set; } = null!;
+        public string PasswordHash { get; set; } = null!;
         public string FullName { get; set; } = null!;
-        public string? Email { get; set; }      // Thêm mới
-        public string? PhoneNumber { get; set; } // Thêm mới
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public bool IsActive { get; set; } = true;
 
-        public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-        public virtual ICollection<UserFunction> UserFunctions { get; set; } = new List<UserFunction>();
+        public virtual ICollection<User_Role> UserRoles { get; set; } = new List<User_Role>();
+        public virtual ICollection<User_Function> UserFunctions { get; set; } = new List<User_Function>();
     }
 }

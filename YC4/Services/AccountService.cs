@@ -10,11 +10,13 @@ namespace YC4.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IJwtService _jwtService;
+        private readonly IUserInterface _userInterface;
 
-        public AccountService(ApplicationDbContext context, IJwtService jwtService)
+        public AccountService(ApplicationDbContext context, IJwtService jwtService, IUserInterface userInterface)
         {
             _context = context;
             _jwtService = jwtService;
+            _userInterface = userInterface;
         }
 
         public async Task<string?> LoginAsync(LoginDto request)
@@ -22,25 +24,15 @@ namespace YC4.Services
             var user = await _context.Users
                 .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
                 .Include(u => u.UserFunctions).ThenInclude(uf => uf.Function)
-                .FirstOrDefaultAsync(u => u.Username == request.Username && u.Password == request.Password);
+                .FirstOrDefaultAsync(u => u.Username == request.Username);
 
-            if (user == null) return null;
+            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash)) 
+                return null;
 
-            // 1. Lấy danh sách RoleCode
-            var roles = user.UserRoles.Select(ur => ur.Role.RoleCode).ToList();
+            var roles = await _userInterface.GetUserRolesAsync(user.UserId);
+            var permissions = await _userInterface.GetUserFunctionsAsync(user.UserId);
 
-            // 2. Lấy danh sách Permission (Gộp từ Role và User trực tiếp)
-            var roleIds = user.UserRoles.Select(ur => ur.RoleId).ToList();
-            var rolePermissions = await _context.RoleFunctions
-                .Where(rf => roleIds.Contains(rf.RoleId))
-                .Select(rf => rf.Function.FunctionCode).ToListAsync();
-
-            var directPermissions = user.UserFunctions.Select(uf => uf.Function.FunctionCode);
-
-            var allPermissions = rolePermissions.Union(directPermissions).Distinct().ToList();
-
-            // 3. Gọi JwtService sinh Token
-            return _jwtService.GenerateToken(user, roles, allPermissions);
+            return _jwtService.GenerateToken(user, roles, permissions);
         }
 
         public async Task<bool> RegisterAsync(RegisterDto request)
@@ -50,20 +42,25 @@ namespace YC4.Services
             var newUser = new User
             {
                 Username = request.Username,
-                Password = request.Password, // Lưu ý: Nên Hash mật khẩu ở đây
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 FullName = request.FullName,
                 Email = request.Email,
-                PhoneNumber = request.PhoneNumber
+                PhoneNumber = request.PhoneNumber,
+                IsActive = true
             };
 
             _context.Users.Add(newUser);
-
-            // Gán role mặc định (ví dụ ID = 2 là Customer/User)
             var result = await _context.SaveChangesAsync() > 0;
+            
             if (result)
             {
-                _context.UserRoles.Add(new UserRole { UserId = newUser.Id, RoleId = 2 });
-                await _context.SaveChangesAsync();
+                // Assign default role (ID = 3 is User according to SeedData)
+                var userRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
+                if (userRole != null)
+                {
+                    _context.UserRoles.Add(new User_Role { UserId = newUser.UserId, RoleId = userRole.RoleId });
+                    await _context.SaveChangesAsync();
+                }
             }
             return result;
         }
@@ -89,9 +86,10 @@ namespace YC4.Services
         public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto request)
         {
             var user = await _context.Users.FindAsync(userId);
-            if (user == null || user.Password != request.OldPassword) return false;
+            if (user == null || !BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash)) 
+                return false;
 
-            user.Password = request.NewPassword;
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             return await _context.SaveChangesAsync() > 0;
         }
     }

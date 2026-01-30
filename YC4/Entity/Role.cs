@@ -2,12 +2,10 @@
 {
     public class Role
     {
-        public int Id { get; set; }
-        public string Name { get; set; } = null!; // Ví dụ: "Administrator"
-        public string RoleCode { get; set; } = null!;// Ví dụ: "ADMIN"
+        public int RoleId { get; set; }
+        public string RoleName { get; set; } = null!;
 
-        // Liên kết
-        public virtual ICollection<UserRole> UserRoles { get; set; }
-        public virtual ICollection<RoleFunction> RoleFunctions { get; set; }
+        public virtual ICollection<User_Role> UserRoles { get; set; } = new List<User_Role>();
+        public virtual ICollection<Role_Function> RoleFunctions { get; set; } = new List<Role_Function>();
     }
 }

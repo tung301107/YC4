@@ -1,6 +1,6 @@
-﻿namespace YC4.Entity
+namespace YC4.Entity
 {
-    public class RoleFunction
+    public class Role_Function
     {
         public int RoleId { get; set; }
         public virtual Role Role { get; set; } = null!;

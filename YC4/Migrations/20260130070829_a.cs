@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace YC4.Migrations
 {
     /// <inheritdoc />
@@ -32,15 +30,14 @@ namespace YC4.Migrations
                 name: "Functions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    FunctionId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    FunctionCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    FunctionCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    FunctionName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Functions", x => x.Id);
+                    table.PrimaryKey("PK_Functions", x => x.FunctionId);
                 });
 
             migrationBuilder.CreateTable(
@@ -61,31 +58,31 @@ namespace YC4.Migrations
                 name: "Roles",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    RoleId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RoleCode = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    RoleName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Roles", x => x.Id);
+                    table.PrimaryKey("PK_Roles", x => x.RoleId);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    UserId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Username = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Username = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Users", x => x.Id);
+                    table.PrimaryKey("PK_Users", x => x.UserId);
                 });
 
             migrationBuilder.CreateTable(
@@ -111,26 +108,6 @@ namespace YC4.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Ticket",
-                columns: table => new
-                {
-                    TicketId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SeatId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PriceAtBooking = table.Column<decimal>(type: "decimal(18,0)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Ticket", x => x.TicketId);
-                    table.ForeignKey(
-                        name: "FK_Ticket_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "OrderId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RoleFunctions",
                 columns: table => new
                 {
@@ -144,13 +121,13 @@ namespace YC4.Migrations
                         name: "FK_RoleFunctions_Functions_FunctionId",
                         column: x => x.FunctionId,
                         principalTable: "Functions",
-                        principalColumn: "Id",
+                        principalColumn: "FunctionId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_RoleFunctions_Roles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "Roles",
-                        principalColumn: "Id",
+                        principalColumn: "RoleId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -168,13 +145,13 @@ namespace YC4.Migrations
                         name: "FK_UserFunctions_Functions_FunctionId",
                         column: x => x.FunctionId,
                         principalTable: "Functions",
-                        principalColumn: "Id",
+                        principalColumn: "FunctionId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_UserFunctions_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -192,78 +169,58 @@ namespace YC4.Migrations
                         name: "FK_UserRoles_Roles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "Roles",
-                        principalColumn: "Id",
+                        principalColumn: "RoleId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_UserRoles_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.InsertData(
+            migrationBuilder.CreateTable(
+                name: "Ticket",
+                columns: table => new
+                {
+                    TicketId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SeatId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PriceAtBooking = table.Column<decimal>(type: "decimal(18,0)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Ticket", x => x.TicketId);
+                    table.ForeignKey(
+                        name: "FK_Ticket_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "OrderId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Ticket_Seats_SeatId",
+                        column: x => x.SeatId,
+                        principalTable: "Seats",
+                        principalColumn: "SeatId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Functions_FunctionCode",
                 table: "Functions",
-                columns: new[] { "Id", "Description", "FunctionCode", "Name" },
-                values: new object[,]
-                {
-                    { 1, null, "CONCERT_view", "Xem Concert" },
-                    { 2, null, "CONCERT_CREATE", "Thêm Concert" },
-                    { 3, null, "Customer_MANAGEMENT", "Quản lý Khách hàng" },
-                    { 4, null, "CONCERT_UPDATE", "Cập nhật sự kiện" },
-                    { 5, null, "Available_Seat", "Xem số ghế" },
-                    { 6, null, "BOOK", "Đặt vé" },
-                    { 7, null, "ADMIN_MANAGE_USERS", "Quản trị hệ thống" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "Roles",
-                columns: new[] { "Id", "Name", "RoleCode" },
-                values: new object[,]
-                {
-                    { 1, "Quản trị viên", "ADMIN" },
-                    { 2, "Khách hàng", "CUSTOMER" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "Users",
-                columns: new[] { "Id", "Email", "FullName", "Password", "PhoneNumber", "Username" },
-                values: new object[,]
-                {
-                    { 1, null, "Sếp Tổng", "123", null, "admin" },
-                    { 2, null, "Nguyễn Văn A", "123", null, "customer" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "RoleFunctions",
-                columns: new[] { "FunctionId", "RoleId" },
-                values: new object[,]
-                {
-                    { 1, 1 },
-                    { 2, 1 },
-                    { 3, 1 },
-                    { 4, 1 },
-                    { 5, 1 },
-                    { 6, 1 },
-                    { 7, 1 },
-                    { 1, 2 },
-                    { 5, 2 },
-                    { 6, 2 }
-                });
-
-            migrationBuilder.InsertData(
-                table: "UserRoles",
-                columns: new[] { "RoleId", "UserId" },
-                values: new object[,]
-                {
-                    { 1, 1 },
-                    { 2, 2 }
-                });
+                column: "FunctionCode",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_RoleFunctions_FunctionId",
                 table: "RoleFunctions",
                 column: "FunctionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Roles_RoleName",
+                table: "Roles",
+                column: "RoleName",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Seats_EventId",
@@ -276,6 +233,11 @@ namespace YC4.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Ticket_SeatId",
+                table: "Ticket",
+                column: "SeatId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserFunctions_FunctionId",
                 table: "UserFunctions",
                 column: "FunctionId");
@@ -284,6 +246,17 @@ namespace YC4.Migrations
                 name: "IX_UserRoles_RoleId",
                 table: "UserRoles",
                 column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Username",
+                table: "Users",
+                column: "Username",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -291,9 +264,6 @@ namespace YC4.Migrations
         {
             migrationBuilder.DropTable(
                 name: "RoleFunctions");
-
-            migrationBuilder.DropTable(
-                name: "Seats");
 
             migrationBuilder.DropTable(
                 name: "Ticket");
@@ -305,10 +275,10 @@ namespace YC4.Migrations
                 name: "UserRoles");
 
             migrationBuilder.DropTable(
-                name: "Events");
+                name: "Orders");
 
             migrationBuilder.DropTable(
-                name: "Orders");
+                name: "Seats");
 
             migrationBuilder.DropTable(
                 name: "Functions");
@@ -318,6 +288,9 @@ namespace YC4.Migrations
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Events");
         }
     }
 }

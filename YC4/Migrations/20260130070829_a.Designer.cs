@@ -12,7 +12,7 @@ using YC4.Data;
 namespace YC4.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260129095458_a")]
+    [Migration("20260130070829_a")]
     partial class a
     {
         /// <inheritdoc />
@@ -52,70 +52,28 @@ namespace YC4.Migrations
 
             modelBuilder.Entity("YC4.Entity.Function", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("FunctionId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FunctionId"));
 
                     b.Property<string>("FunctionCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("FunctionName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("Id");
+                    b.HasKey("FunctionId");
+
+                    b.HasIndex("FunctionCode")
+                        .IsUnique();
 
                     b.ToTable("Functions");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            FunctionCode = "CONCERT_view",
-                            Name = "Xem Concert"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            FunctionCode = "CONCERT_CREATE",
-                            Name = "Thêm Concert"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            FunctionCode = "Customer_MANAGEMENT",
-                            Name = "Quản lý Khách hàng"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            FunctionCode = "CONCERT_UPDATE",
-                            Name = "Cập nhật sự kiện"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            FunctionCode = "Available_Seat",
-                            Name = "Xem số ghế"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            FunctionCode = "BOOK",
-                            Name = "Đặt vé"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            FunctionCode = "ADMIN_MANAGE_USERS",
-                            Name = "Quản trị hệ thống"
-                        });
                 });
 
             modelBuilder.Entity("YC4.Entity.Order", b =>
@@ -140,40 +98,26 @@ namespace YC4.Migrations
 
             modelBuilder.Entity("YC4.Entity.Role", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("RoleId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoleId"));
 
-                    b.Property<string>("Name")
+                    b.Property<string>("RoleName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("RoleCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.HasKey("RoleId");
 
-                    b.HasKey("Id");
+                    b.HasIndex("RoleName")
+                        .IsUnique();
 
                     b.ToTable("Roles");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Quản trị viên",
-                            RoleCode = "ADMIN"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Khách hàng",
-                            RoleCode = "CUSTOMER"
-                        });
                 });
 
-            modelBuilder.Entity("YC4.Entity.RoleFunction", b =>
+            modelBuilder.Entity("YC4.Entity.Role_Function", b =>
                 {
                     b.Property<int>("RoleId")
                         .HasColumnType("int");
@@ -186,58 +130,6 @@ namespace YC4.Migrations
                     b.HasIndex("FunctionId");
 
                     b.ToTable("RoleFunctions");
-
-                    b.HasData(
-                        new
-                        {
-                            RoleId = 1,
-                            FunctionId = 1
-                        },
-                        new
-                        {
-                            RoleId = 1,
-                            FunctionId = 2
-                        },
-                        new
-                        {
-                            RoleId = 1,
-                            FunctionId = 3
-                        },
-                        new
-                        {
-                            RoleId = 1,
-                            FunctionId = 4
-                        },
-                        new
-                        {
-                            RoleId = 1,
-                            FunctionId = 5
-                        },
-                        new
-                        {
-                            RoleId = 1,
-                            FunctionId = 6
-                        },
-                        new
-                        {
-                            RoleId = 1,
-                            FunctionId = 7
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            FunctionId = 1
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            FunctionId = 5
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            FunctionId = 6
-                        });
                 });
 
             modelBuilder.Entity("YC4.Entity.Seat", b =>
@@ -287,57 +179,57 @@ namespace YC4.Migrations
 
                     b.HasIndex("OrderId");
 
+                    b.HasIndex("SeatId");
+
                     b.ToTable("Ticket");
                 });
 
             modelBuilder.Entity("YC4.Entity.User", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("UserId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
 
                     b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Password")
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId");
+
+                    b.HasIndex("Email");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            FullName = "Sếp Tổng",
-                            Password = "123",
-                            Username = "admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            FullName = "Nguyễn Văn A",
-                            Password = "123",
-                            Username = "customer"
-                        });
                 });
 
-            modelBuilder.Entity("YC4.Entity.UserFunction", b =>
+            modelBuilder.Entity("YC4.Entity.User_Function", b =>
                 {
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -352,7 +244,7 @@ namespace YC4.Migrations
                     b.ToTable("UserFunctions");
                 });
 
-            modelBuilder.Entity("YC4.Entity.UserRole", b =>
+            modelBuilder.Entity("YC4.Entity.User_Role", b =>
                 {
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -365,21 +257,9 @@ namespace YC4.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("UserRoles");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 1,
-                            RoleId = 1
-                        },
-                        new
-                        {
-                            UserId = 2,
-                            RoleId = 2
-                        });
                 });
 
-            modelBuilder.Entity("YC4.Entity.RoleFunction", b =>
+            modelBuilder.Entity("YC4.Entity.Role_Function", b =>
                 {
                     b.HasOne("YC4.Entity.Function", "Function")
                         .WithMany("RoleFunctions")
@@ -409,14 +289,24 @@ namespace YC4.Migrations
 
             modelBuilder.Entity("YC4.Entity.Ticket", b =>
                 {
-                    b.HasOne("YC4.Entity.Order", null)
+                    b.HasOne("YC4.Entity.Order", "Order")
                         .WithMany("Tickets")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("YC4.Entity.Seat", "Seat")
+                        .WithMany()
+                        .HasForeignKey("SeatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Seat");
                 });
 
-            modelBuilder.Entity("YC4.Entity.UserFunction", b =>
+            modelBuilder.Entity("YC4.Entity.User_Function", b =>
                 {
                     b.HasOne("YC4.Entity.Function", "Function")
                         .WithMany("UserFunctions")
@@ -435,7 +325,7 @@ namespace YC4.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("YC4.Entity.UserRole", b =>
+            modelBuilder.Entity("YC4.Entity.User_Role", b =>
                 {
                     b.HasOne("YC4.Entity.Role", "Role")
                         .WithMany("UserRoles")

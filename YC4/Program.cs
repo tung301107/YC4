@@ -87,7 +87,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Nhập Token của bạn theo định dạng: Bearer {token}"
+        Description = "Chỉ nhập chuỗi Token của bạn (Swagger sẽ tự động thêm tiền tố 'Bearer ')"
     });
 
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement

@@ -4,40 +4,58 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using YC4.Data;
+using YC4.Entity;
 using YC4.Interfaces;
 using YC4.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. Cấu hình DbContext ---
+// --- 1. Cấu hình Strongly Typed Settings (JwtSettings) ---
+// Đọc cấu hình từ appsettings.json và đăng ký vào DI Container
+var jwtSection = builder.Configuration.GetSection("JwtSettings");
+builder.Services.Configure<JwtSettings>(jwtSection);
+
+var jwtSettings = jwtSection.Get<JwtSettings>();
+if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.SecretKey))
+{
+    throw new Exception("JwtSettings is not configured properly in appsettings.json");
+}
+var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+
+// --- 2. Cấu hình DbContext ---
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --- 2. Cấu hình Authentication với JWT ---
-var secretKey = "Chuoi_Key_Bi_Mat_Cua_Ban_Phai_Du_Dai_32_Ky_Tu";
-var key = Encoding.ASCII.GetBytes(secretKey);
-
-builder.Services.AddAuthentication(x =>
+// --- 3. Cấu hình Authentication với JWT ---
+builder.Services.AddAuthentication(options =>
 {
-    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddJwtBearer(x =>
+.AddJwtBearer(options =>
 {
-    x.RequireHttpsMetadata = false;
-    x.SaveToken = true;
-    x.TokenValidationParameters = new TokenValidationParameters
+    options.RequireHttpsMetadata = false; // Set true trong môi trường Production
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = false,
-        ValidateAudience = false
+        ValidateIssuer = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidateAudience = true,
+        ValidAudience = jwtSettings.Audience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero // Token hết hạn là vô hiệu lực ngay lập tức
     };
 });
 
-// --- 3. Cấu hình Authorization (Phân quyền) ---
+// --- 4. Cấu hình Authorization (Phân quyền) ---
 builder.Services.AddAuthorization(options =>
 {
+    // Cấu hình Policy dựa trên Role
+    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+
+    // Cấu hình Policy dựa trên Permission (FunctionCode)
     options.AddPolicy("CanViewConcert", policy => policy.RequireClaim("Permission", "CONCERT_view"));
     options.AddPolicy("CanCreateConcert", policy => policy.RequireClaim("Permission", "CONCERT_CREATE"));
     options.AddPolicy("CanUpdateConcert", policy => policy.RequireClaim("Permission", "CONCERT_UPDATE"));
@@ -47,64 +65,73 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CanManageCustomers", policy => policy.RequireClaim("Permission", "Customer_MANAGEMENT"));
 });
 
-// --- 4. Đăng ký DI Services & Swagger ---
+// --- 5. Đăng ký DI Services & Swagger ---
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
 
-// Cấu hình Swagger đầy đủ để hiện nút Authorize (Chiếc khóa)
+// Cấu hình Swagger để hỗ trợ kiểm thử Token trực tiếp
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "YC4 API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "YC4 Ticketing API", Version = "v1" });
 
-    // Định nghĩa Schema Bearer
+    // Cấu hình nút Authorize (Chiếc khóa) trên giao diện Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Nhập Token theo cú pháp: Bearer {token}",
+        Description = "Vui lòng nhập Token theo định dạng: Bearer {your_token}",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
-    // Áp dụng Security Requirement
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
 
+// Đăng ký các Interface và Service thực thi
+builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddTransient<IPriceCalculator, PriceCalculator>();
 
+// Cấu hình CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
+
 var app = builder.Build();
 
-// --- 5. Cấu hình Middleware ---
+// --- 6. Cấu hình Middleware Pipeline ---
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "YC4 API v1"));
 }
 
 app.UseHttpsRedirection();
 
-// Lưu ý: Authentication PHẢI nằm TRƯỚC Authorization
+// QUAN TRỌNG: CORS phải đứng trước Authentication
+app.UseCors("AllowAll");
+
+// Thứ tự bắt buộc: Xác thực trước -> Phân quyền sau
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
+Console.WriteLine("=== YC4 TICKETING SYSTEM IS RUNNING ===");
+Console.WriteLine($"Environment: {app.Environment.EnvironmentName}");
 app.Run();

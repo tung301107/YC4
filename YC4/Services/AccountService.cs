@@ -1,8 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using YC4.Data;
 using YC4.DTOs;
 using YC4.Entity;
@@ -13,15 +9,15 @@ namespace YC4.Services
     public class AccountService : IAccountService
     {
         private readonly ApplicationDbContext _context;
-        private readonly IConfiguration _configuration;
+        private readonly IJwtService _jwtService;
 
-        public AccountService(ApplicationDbContext context, IConfiguration configuration)
+        public AccountService(ApplicationDbContext context, IJwtService jwtService)
         {
             _context = context;
-            _configuration = configuration;
+            _jwtService = jwtService;
         }
 
-        public async Task<string> LoginAsync(LoginDto request)
+        public async Task<string?> LoginAsync(LoginDto request)
         {
             var user = await _context.Users
                 .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
@@ -30,53 +26,49 @@ namespace YC4.Services
 
             if (user == null) return null;
 
-            // Lấy quyền từ Role và đặc cách
+            // 1. Lấy danh sách RoleCode
+            var roles = user.UserRoles.Select(ur => ur.Role.RoleCode).ToList();
+
+            // 2. Lấy danh sách Permission (Gộp từ Role và User trực tiếp)
             var roleIds = user.UserRoles.Select(ur => ur.RoleId).ToList();
             var rolePermissions = await _context.RoleFunctions
                 .Where(rf => roleIds.Contains(rf.RoleId))
                 .Select(rf => rf.Function.FunctionCode).ToListAsync();
-            var userPermissions = user.UserFunctions.Select(uf => uf.Function.FunctionCode);
-            var allPermissions = rolePermissions.Union(userPermissions).Distinct();
 
-            // Tạo Claims
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.FullName)
-            };
-            foreach (var role in user.UserRoles.Select(ur => ur.Role.RoleCode)) claims.Add(new Claim(ClaimTypes.Role, role));
-            foreach (var perm in allPermissions) claims.Add(new Claim("Permission", perm));
+            var directPermissions = user.UserFunctions.Select(uf => uf.Function.FunctionCode);
 
-            // Sinh Token
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? "Chuoi_Key_Bi_Mat_Cua_Ban_Phai_Du_Dai_32_Ky_Tu");
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddDays(7),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
+            var allPermissions = rolePermissions.Union(directPermissions).Distinct().ToList();
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
+            // 3. Gọi JwtService sinh Token
+            return _jwtService.GenerateToken(user, roles, allPermissions);
         }
 
         public async Task<bool> RegisterAsync(RegisterDto request)
         {
             if (await _context.Users.AnyAsync(u => u.Username == request.Username)) return false;
+
             var newUser = new User
             {
                 Username = request.Username,
-                Password = request.Password,
+                Password = request.Password, // Lưu ý: Nên Hash mật khẩu ở đây
                 FullName = request.FullName,
                 Email = request.Email,
-                PhoneNumber = request.PhoneNumber,
-                UserRoles = new List<UserRole> { new UserRole { RoleId = 2 } }
+                PhoneNumber = request.PhoneNumber
             };
+
             _context.Users.Add(newUser);
-            return await _context.SaveChangesAsync() > 0;
+
+            // Gán role mặc định (ví dụ ID = 2 là Customer/User)
+            var result = await _context.SaveChangesAsync() > 0;
+            if (result)
+            {
+                _context.UserRoles.Add(new UserRole { UserId = newUser.Id, RoleId = 2 });
+                await _context.SaveChangesAsync();
+            }
+            return result;
         }
 
-        public async Task<object> GetProfileAsync(int userId)
+        public async Task<object?> GetProfileAsync(int userId)
         {
             var user = await _context.Users.FindAsync(userId);
             return user == null ? null : new { user.Username, user.FullName, user.Email, user.PhoneNumber };
@@ -86,9 +78,11 @@ namespace YC4.Services
         {
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return false;
+
             user.FullName = request.FullName;
             user.Email = request.Email;
             user.PhoneNumber = request.PhoneNumber;
+
             return await _context.SaveChangesAsync() > 0;
         }
 
@@ -96,6 +90,7 @@ namespace YC4.Services
         {
             var user = await _context.Users.FindAsync(userId);
             if (user == null || user.Password != request.OldPassword) return false;
+
             user.Password = request.NewPassword;
             return await _context.SaveChangesAsync() > 0;
         }

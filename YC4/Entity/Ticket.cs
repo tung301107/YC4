@@ -10,5 +10,8 @@ namespace YC4.Entity
 
         [Column(TypeName = "decimal(18,0)")]
         public decimal PriceAtBooking { get; set; } // Lưu giá tại thời điểm mua
+        public virtual Order Order { get; set; } = null!;
+        public virtual Seat Seat { get; set; } = null!;
+
     }
 }

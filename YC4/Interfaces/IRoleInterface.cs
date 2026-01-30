@@ -10,5 +10,7 @@ namespace YC4.Interfaces
         Task<Role> CreateAsync(Role role);
         Task<Role> UpdateAsync(Role role);
         Task<bool> DeleteAsync(int roleId);
+
+        Task<bool> AssignFunctionAsync(int roleId, int functionId);
     }
 }

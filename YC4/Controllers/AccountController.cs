@@ -17,24 +17,6 @@ namespace YC4.Controllers
             _accountService = accountService;
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto request)
-        {
-            var token = await _accountService.LoginAsync(request);
-            if (token == null)
-                return Unauthorized(new { Message = "Tài khoản hoặc mật khẩu không chính xác!" });
-
-            return Ok(new { Token = token, Message = "Đăng nhập thành công" });
-        }
-
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto request)
-        {
-            var result = await _accountService.RegisterAsync(request);
-            if (!result) return BadRequest(new { Message = "Đăng ký thất bại hoặc tên tài khoản đã tồn tại!" });
-            return Ok(new { Message = "Đăng ký tài công!" });
-        }
-
         [Authorize]
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()

@@ -9,60 +9,10 @@ namespace YC4.Services
     public class AccountService : IAccountService
     {
         private readonly ApplicationDbContext _context;
-        private readonly IJwtService _jwtService;
-        private readonly IUserInterface _userInterface;
 
-        public AccountService(ApplicationDbContext context, IJwtService jwtService, IUserInterface userInterface)
+        public AccountService(ApplicationDbContext context)
         {
             _context = context;
-            _jwtService = jwtService;
-            _userInterface = userInterface;
-        }
-
-        public async Task<string?> LoginAsync(LoginDto request)
-        {
-            var user = await _context.Users
-                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
-                .Include(u => u.UserFunctions).ThenInclude(uf => uf.Function)
-                .FirstOrDefaultAsync(u => u.Username == request.Username);
-
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash)) 
-                return null;
-
-            var roles = await _userInterface.GetUserRolesAsync(user.UserId);
-            var permissions = await _userInterface.GetUserFunctionsAsync(user.UserId);
-
-            return _jwtService.GenerateToken(user, roles, permissions);
-        }
-
-        public async Task<bool> RegisterAsync(RegisterDto request)
-        {
-            if (await _context.Users.AnyAsync(u => u.Username == request.Username)) return false;
-
-            var newUser = new User
-            {
-                Username = request.Username,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                FullName = request.FullName,
-                Email = request.Email,
-                PhoneNumber = request.PhoneNumber,
-                IsActive = true
-            };
-
-            _context.Users.Add(newUser);
-            var result = await _context.SaveChangesAsync() > 0;
-            
-            if (result)
-            {
-                // Assign default role (ID = 3 is User according to SeedData)
-                var userRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
-                if (userRole != null)
-                {
-                    _context.UserRoles.Add(new User_Role { UserId = newUser.UserId, RoleId = userRole.RoleId });
-                    await _context.SaveChangesAsync();
-                }
-            }
-            return result;
         }
 
         public async Task<object?> GetProfileAsync(int userId)

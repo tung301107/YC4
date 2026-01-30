@@ -6,7 +6,7 @@ namespace YC4.Interfaces
     {
         Task<User?> GetByIdAsync(int userId);
         Task<User?> GetByUsernameAsync(string username);
-        Task<List<User>> GetAllAsync();
+        Task<List<YC4.DTOs.UserDto>> GetAllAsync();
         Task<User> CreateAsync(User user);
         Task<User> UpdateAsync(User user);
         Task<bool> DeleteAsync(int userId);

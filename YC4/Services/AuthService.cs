@@ -62,7 +62,15 @@ namespace YC4.Services
                 IsActive = true
             };
 
-            await _userInterface.CreateAsync(user);
+            var newUser = await _userInterface.CreateAsync(user);
+            
+            // Assign default role "User"
+            var userRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
+            if (userRole != null)
+            {
+                await _userInterface.AssignRoleAsync(newUser.UserId, userRole.RoleId);
+            }
+
             return new LoginResponse { Success = true, Message = "Registration successful" };
         }
     }

@@ -29,11 +29,20 @@ namespace YC4.Services
                 .FirstOrDefaultAsync(u => u.Username == username);
         }
 
-        public async Task<List<User>> GetAllAsync()
+        public async Task<List<YC4.DTOs.UserDto>> GetAllAsync()
         {
             return await _context.Users
                 .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
                 .Where(u => u.IsActive)
+                .Select(u => new YC4.DTOs.UserDto
+                {
+                    UserId = u.UserId,
+                    Username = u.Username,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    PhoneNumber = u.PhoneNumber,
+                    Roles = u.UserRoles.Select(ur => ur.Role.RoleName).ToList()
+                })
                 .ToListAsync();
         }
 
